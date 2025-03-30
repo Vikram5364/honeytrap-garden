@@ -6,9 +6,11 @@ import { ActivityLog } from './ActivityLog';
 import { ConfigPanel } from './ConfigPanel';
 import { LoginPortal } from './LoginPortal';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { initialAttacks, initialStatistics } from '@/utils/honeypotData';
-import { AlertTriangle, Bug, Fingerprint, ShieldAlert, Terminal, Settings } from 'lucide-react';
+import { AlertTriangle, Bug, Fingerprint, ShieldAlert, Terminal, Settings, Server } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function Dashboard() {
   return (
@@ -19,7 +21,7 @@ export function Dashboard() {
             <ShieldAlert className="h-8 w-8 text-honeypot-glow" />
             <h1 className="text-3xl font-bold text-honeypot-glow">HoneyPot Dashboard</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             <Badge variant="outline" className="border-honeypot-glow/50 text-honeypot-glow px-3 py-1">
               <div className="w-2 h-2 rounded-full bg-honeypot-glow mr-2 animate-pulse"></div>
               Active
@@ -28,6 +30,12 @@ export function Dashboard() {
               <AlertTriangle className="h-3 w-3 mr-1" />
               {initialStatistics.totalAttempts} Threats Detected
             </Badge>
+            <Link to="/server">
+              <Button className="bg-honeypot-glow text-black hover:bg-honeypot-glow/80">
+                <Server className="h-4 w-4 mr-2" />
+                Honeypot Server
+              </Button>
+            </Link>
           </div>
         </div>
         <p className="text-gray-400 mt-1">Monitoring and analyzing potential intrusion attempts</p>
