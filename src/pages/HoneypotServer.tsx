@@ -18,6 +18,15 @@ const HoneypotServer = () => {
   const [port, setPort] = useState('80');
   const [logLevel, setLogLevel] = useState('info');
   const [logs, setLogs] = useState<string[]>([]);
+  
+  // Add state for vulnerability toggles
+  const [sqlInjection, setSqlInjection] = useState(true);
+  const [xss, setXss] = useState(true);
+  const [rfi, setRfi] = useState(true);
+  const [lfi, setLfi] = useState(true);
+  const [commandInjection, setCommandInjection] = useState(false);
+  const [csrf, setCsrf] = useState(false);
+  
   const { toast } = useToast();
 
   useEffect(() => {
@@ -75,6 +84,34 @@ const HoneypotServer = () => {
     
     return () => clearInterval(interval);
   }, [serverStatus]);
+
+  // Handle vulnerability toggle changes
+  const handleVulnerabilityToggle = (type: string, value: boolean) => {
+    const vulnerabilityMap: Record<string, () => void> = {
+      'SQL Injection': () => setSqlInjection(value),
+      'Cross-Site Scripting (XSS)': () => setXss(value),
+      'Remote File Inclusion': () => setRfi(value),
+      'Local File Inclusion': () => setLfi(value),
+      'Command Injection': () => setCommandInjection(value),
+      'CSRF Vulnerabilities': () => setCsrf(value),
+    };
+    
+    const handler = vulnerabilityMap[type];
+    if (handler) {
+      handler();
+      
+      // Add a log entry when a vulnerability is toggled
+      setLogs(prev => [
+        `[${new Date().toISOString()}] [INFO] ${type} vulnerability emulation ${value ? 'enabled' : 'disabled'}`,
+        ...prev
+      ]);
+      
+      toast({
+        title: `${type} ${value ? 'Enabled' : 'Disabled'}`,
+        description: `${type} vulnerability emulation has been ${value ? 'enabled' : 'disabled'}`,
+      });
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -251,12 +288,12 @@ const HoneypotServer = () => {
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[
-                      { name: 'SQL Injection', active: true, description: 'Emulates vulnerable SQL queries' },
-                      { name: 'Cross-Site Scripting (XSS)', active: true, description: 'Responds to XSS injection attempts' },
-                      { name: 'Remote File Inclusion', active: true, description: 'Simulates RFI vulnerabilities' },
-                      { name: 'Local File Inclusion', active: true, description: 'Emulates LFI vulnerabilities' },
-                      { name: 'Command Injection', active: false, description: 'Handles OS command injection attempts' },
-                      { name: 'CSRF Vulnerabilities', active: false, description: 'Exposes fake CSRF endpoints' },
+                      { name: 'SQL Injection', active: sqlInjection, description: 'Emulates vulnerable SQL queries' },
+                      { name: 'Cross-Site Scripting (XSS)', active: xss, description: 'Responds to XSS injection attempts' },
+                      { name: 'Remote File Inclusion', active: rfi, description: 'Simulates RFI vulnerabilities' },
+                      { name: 'Local File Inclusion', active: lfi, description: 'Emulates LFI vulnerabilities' },
+                      { name: 'Command Injection', active: commandInjection, description: 'Handles OS command injection attempts' },
+                      { name: 'CSRF Vulnerabilities', active: csrf, description: 'Exposes fake CSRF endpoints' },
                     ].map((vuln, index) => (
                       <div 
                         key={index} 
@@ -268,6 +305,7 @@ const HoneypotServer = () => {
                         </div>
                         <Switch 
                           checked={vuln.active} 
+                          onCheckedChange={(checked) => handleVulnerabilityToggle(vuln.name, checked)}
                           className="data-[state=checked]:bg-honeypot-glow"
                         />
                       </div>
