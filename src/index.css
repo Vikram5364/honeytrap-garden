@@ -1,3 +1,6 @@
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -35,19 +38,12 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -96,6 +92,33 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-honeypot-dark text-gray-200 font-mono;
   }
+}
+
+.terminal-window {
+  @apply bg-honeypot-terminal rounded-md border border-honeypot-glow/30 p-4 font-mono text-sm overflow-auto;
+  @apply relative;
+}
+
+.terminal-window::before {
+  content: '';
+  @apply absolute top-0 left-0 right-0 h-0.5 bg-honeypot-glow/20 animate-scan-line;
+  animation: scan-line 3s linear infinite;
+}
+
+.terminal-line {
+  @apply mb-1;
+}
+
+.terminal-cursor {
+  @apply inline-block w-2 h-4 bg-honeypot-glow ml-1 animate-blink;
+}
+
+.glow-border {
+  @apply border border-honeypot-glow/30 rounded-md animate-pulse-glow;
+}
+
+.grid-bg {
+  @apply bg-grid-pattern bg-[length:20px_20px];
 }

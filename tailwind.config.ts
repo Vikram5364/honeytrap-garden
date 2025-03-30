@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,15 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				honeypot: {
+					'dark': '#121212',
+					'darker': '#0a0a0a',
+					'glow': '#00ff9d',
+					'alert': '#ff004d',
+					'success': '#01c0f0',
+					'warning': '#ffae00',
+					'terminal': '#282c34',
 				}
 			},
 			borderRadius: {
@@ -84,11 +94,36 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'pulse-glow': {
+					'0%, 100%': { 
+						boxShadow: '0 0 8px 2px rgba(0, 255, 157, 0.3)'
+					},
+					'50%': { 
+						boxShadow: '0 0 12px 4px rgba(0, 255, 157, 0.5)'
+					}
+				},
+				'blink': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.7' }
+				},
+				'scan-line': {
+					'0%': { transform: 'translateY(0)' },
+					'100%': { transform: 'translateY(100%)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-glow': 'pulse-glow 2s infinite ease-in-out',
+				'blink': 'blink 1.5s infinite',
+				'scan-line': 'scan-line 3s linear infinite'
+			},
+			fontFamily: {
+				'mono': ['JetBrains Mono', 'monospace', 'ui-monospace', 'SFMono-Regular'],
+			},
+			backgroundImage: {
+				'grid-pattern': 'linear-gradient(rgba(0, 255, 157, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 157, 0.1) 1px, transparent 1px)',
 			}
 		}
 	},
