@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ServerLogs } from './ServerLogs';
-import { AttackAnalysis } from './AttackAnalysis';
-import { VulnerabilitiesPanel } from './VulnerabilitiesPanel';
+import { LogsTab } from './tabs/LogsTab';
+import { AttacksTab } from './tabs/AttacksTab';
+import { VulnerabilitiesTab } from './tabs/VulnerabilitiesTab';
 import { Code, Bug, ShieldAlert } from 'lucide-react';
 import { WebAppTemplate } from '@/models/WebAppTemplate';
 
@@ -42,11 +42,11 @@ export function ServerContentTabs({
       </TabsList>
       
       <TabsContent value="logs" className="mt-4">
-        <ServerLogs logs={logs} serverStatus={serverStatus} />
+        <LogsTab logs={logs} serverStatus={serverStatus} />
       </TabsContent>
       
       <TabsContent value="attacks" className="mt-4">
-        <AttackAnalysis 
+        <AttacksTab 
           serverStatus={serverStatus} 
           selectedAppId={selectedAppId} 
           webAppTemplates={webAppTemplates} 
@@ -54,7 +54,7 @@ export function ServerContentTabs({
       </TabsContent>
       
       <TabsContent value="vulnerabilities" className="mt-4">
-        <VulnerabilitiesPanel 
+        <VulnerabilitiesTab 
           vulnerabilities={vulnerabilities} 
           onToggleVulnerability={onToggleVulnerability} 
         />
