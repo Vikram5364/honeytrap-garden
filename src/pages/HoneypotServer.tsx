@@ -221,7 +221,7 @@ const HoneypotServer = () => {
             <Link to="/" className="text-honeypot-glow hover:text-honeypot-glow/80">
               <ArrowLeft className="h-5 w-5" />
             </Link>
-            <h1 className="text-3xl font-bold text-honeypot-glow">honeytrap Web App Honeypot</h1>
+            <h1 className="text-3xl font-bold text-honeypot-glow">Honeytrap Web App Honeypot</h1>
             <Badge 
               variant={serverStatus === 'running' ? 'default' : 'outline'} 
               className={serverStatus === 'running' 
@@ -275,7 +275,7 @@ const HoneypotServer = () => {
       </div>
       
       <footer className="mt-12 text-center text-gray-500 text-sm">
-        <p>honeytrap Web Application Honeypot - For educational and research purposes only.</p>
+        <p>Honeytrap Web Application Honeypot - For educational and research purposes only.</p>
         <p className="mt-1">Not recommended for production environments.</p>
       </footer>
     </div>
