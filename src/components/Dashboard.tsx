@@ -19,7 +19,7 @@ export function Dashboard() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ShieldAlert className="h-8 w-8 text-honeypot-glow" />
-            <h1 className="text-3xl font-bold text-honeypot-glow">Vn Dashboard</h1>
+            <h1 className="text-3xl font-bold text-honeypot-glow">honeytrap Dashboard</h1>
           </div>
           <div className="flex items-center gap-4">
             <Badge variant="outline" className="border-honeypot-glow/50 text-honeypot-glow px-3 py-1">
