@@ -1,20 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Play, Square, Database, Server, ShieldAlert, Bug, Code } from 'lucide-react';
+import { ArrowLeft, ShieldAlert } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { HoneypotController } from '@/components/HoneypotController';
 import { WebAppSelector } from '@/components/WebAppSelector';
 import { VulnerabilityEmulator } from '@/services/VulnerabilityEmulator';
 import { webAppTemplates } from '@/models/WebAppTemplate';
+import { ServerControlPanel } from '@/components/server/ServerControlPanel';
+import { ServerContentTabs } from '@/components/server/ServerContentTabs';
 
 const HoneypotServer = () => {
   const [serverStatus, setServerStatus] = useState<'stopped' | 'running'>('stopped');
@@ -202,6 +198,16 @@ const HoneypotServer = () => {
     }
   };
 
+  // Prepare vulnerabilities data for the VulnerabilitiesPanel component
+  const vulnerabilities = [
+    { name: 'SQL Injection', active: sqlInjection, description: 'Emulates vulnerable SQL queries' },
+    { name: 'Cross-Site Scripting (XSS)', active: xss, description: 'Responds to XSS injection attempts' },
+    { name: 'Remote File Inclusion', active: rfi, description: 'Simulates RFI vulnerabilities' },
+    { name: 'Local File Inclusion', active: lfi, description: 'Emulates LFI vulnerabilities' },
+    { name: 'Command Injection', active: commandInjection, description: 'Handles OS command injection attempts' },
+    { name: 'CSRF Vulnerabilities', active: csrf, description: 'Exposes fake CSRF endpoints' },
+  ];
+
   // Handle web app template selection
   const handleSelectApp = (appId: string) => {
     setSelectedAppId(appId);
@@ -234,62 +240,15 @@ const HoneypotServer = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="col-span-1">
-          <Card className="bg-honeypot-darker border-gray-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Server className="h-5 w-5 text-honeypot-glow" />
-                Server Control
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm text-gray-400">Port</label>
-                <Input
-                  type="text"
-                  value={port}
-                  onChange={(e) => setPort(e.target.value)}
-                  className="bg-gray-900 border-gray-700 focus:border-honeypot-glow"
-                  placeholder="80"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm text-gray-400">Log Level</label>
-                <Select value={logLevel} onValueChange={setLogLevel}>
-                  <SelectTrigger className="bg-gray-900 border-gray-700 focus:border-honeypot-glow">
-                    <SelectValue placeholder="Select Log Level" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-900 border-gray-700">
-                    <SelectItem value="debug">Debug</SelectItem>
-                    <SelectItem value="info">Info</SelectItem>
-                    <SelectItem value="warning">Warning</SelectItem>
-                    <SelectItem value="error">Error</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-4 pt-4">
-                {serverStatus === 'stopped' ? (
-                  <Button 
-                    className="w-full bg-honeypot-glow text-black hover:bg-honeypot-glow/80 font-bold"
-                    onClick={startServer}
-                  >
-                    <Play className="h-4 w-4 mr-2" />
-                    Start Honeypot Server
-                  </Button>
-                ) : (
-                  <Button 
-                    variant="destructive" 
-                    className="w-full font-bold"
-                    onClick={stopServer}
-                  >
-                    <Square className="h-4 w-4 mr-2" />
-                    Stop Honeypot Server
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <ServerControlPanel 
+            serverStatus={serverStatus}
+            port={port}
+            setPort={setPort}
+            logLevel={logLevel}
+            setLogLevel={setLogLevel}
+            startServer={startServer}
+            stopServer={stopServer}
+          />
           
           <div className="mt-6">
             <WebAppSelector 
@@ -304,118 +263,14 @@ const HoneypotServer = () => {
         </div>
         
         <div className="col-span-1 lg:col-span-2">
-          <Tabs defaultValue="logs" className="w-full">
-            <TabsList className="bg-gray-900 border border-gray-800">
-              <TabsTrigger value="logs" className="data-[state=active]:bg-honeypot-terminal data-[state=active]:text-honeypot-glow">
-                <Code className="h-4 w-4 mr-2" />
-                Server Logs
-              </TabsTrigger>
-              <TabsTrigger value="attacks" className="data-[state=active]:bg-honeypot-terminal data-[state=active]:text-honeypot-glow">
-                <Bug className="h-4 w-4 mr-2" />
-                Attack Analysis
-              </TabsTrigger>
-              <TabsTrigger value="vulnerabilities" className="data-[state=active]:bg-honeypot-terminal data-[state=active]:text-honeypot-glow">
-                <ShieldAlert className="h-4 w-4 mr-2" />
-                Vulnerabilities
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="logs" className="mt-4">
-              <Card className="bg-honeypot-darker border-gray-800">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Code className="h-5 w-5 text-honeypot-glow" />
-                    Live Server Logs
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="terminal-window h-[400px]">
-                    {logs.map((log, index) => (
-                      <div key={index} className="terminal-line">
-                        <code 
-                          className={
-                            log.includes('[ALERT]') 
-                              ? 'text-honeypot-alert' 
-                              : log.includes('[ERROR]') 
-                                ? 'text-red-400' 
-                                : log.includes('[WARNING]') 
-                                  ? 'text-honeypot-warning' 
-                                  : 'text-honeypot-glow/70'
-                          }
-                        >
-                          {log}
-                        </code>
-                      </div>
-                    ))}
-                    {serverStatus === 'running' && (
-                      <div className="terminal-line">
-                        <span className="text-honeypot-glow/70">$ _</span>
-                        <span className="terminal-cursor"></span>
-                      </div>
-                    )}
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="attacks" className="mt-4">
-              <Card className="bg-honeypot-darker border-gray-800">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Bug className="h-5 w-5 text-honeypot-glow" />
-                    Attack Analysis
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[400px] flex items-center justify-center text-gray-500">
-                    {serverStatus === 'running' ? (
-                      <p>Collecting and analyzing attack data for {webAppTemplates.find(app => app.id === selectedAppId)?.name || 'selected application'}.</p>
-                    ) : (
-                      <p>Start the honeypot server to begin collecting attack data.</p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="vulnerabilities" className="mt-4">
-              <Card className="bg-honeypot-darker border-gray-800">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <ShieldAlert className="h-5 w-5 text-honeypot-glow" />
-                    Emulated Vulnerabilities
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[
-                      { name: 'SQL Injection', active: sqlInjection, description: 'Emulates vulnerable SQL queries' },
-                      { name: 'Cross-Site Scripting (XSS)', active: xss, description: 'Responds to XSS injection attempts' },
-                      { name: 'Remote File Inclusion', active: rfi, description: 'Simulates RFI vulnerabilities' },
-                      { name: 'Local File Inclusion', active: lfi, description: 'Emulates LFI vulnerabilities' },
-                      { name: 'Command Injection', active: commandInjection, description: 'Handles OS command injection attempts' },
-                      { name: 'CSRF Vulnerabilities', active: csrf, description: 'Exposes fake CSRF endpoints' },
-                    ].map((vuln, index) => (
-                      <div 
-                        key={index} 
-                        className="p-3 bg-gray-900/50 rounded-md border border-gray-800 flex justify-between items-center"
-                      >
-                        <div>
-                          <p className="text-sm text-gray-300">{vuln.name}</p>
-                          <p className="text-xs text-gray-500">{vuln.description}</p>
-                        </div>
-                        <Switch 
-                          checked={vuln.active} 
-                          onCheckedChange={(checked) => handleVulnerabilityToggle(vuln.name, checked)}
-                          className="data-[state=checked]:bg-honeypot-glow"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+          <ServerContentTabs 
+            logs={logs}
+            serverStatus={serverStatus}
+            selectedAppId={selectedAppId}
+            webAppTemplates={webAppTemplates}
+            vulnerabilities={vulnerabilities}
+            onToggleVulnerability={handleVulnerabilityToggle}
+          />
         </div>
       </div>
       
